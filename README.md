@@ -2,6 +2,40 @@
 
 TxnLedger is a high-performance financial transaction ledger backend built with **Java 17**, **Spring Boot**, and **PostgreSQL**. It is designed to handle high-concurrency transfers while maintaining strict data integrity using advanced locking mechanisms.
 
+## Architecture
+
+```mermaid
+graph TD
+    Client[REST Client / Frontend] -->|HTTP/JSON| API[REST Controllers]
+    
+    subgraph Spring Boot Application
+        API --> AS[Account Service]
+        API --> TS[Transaction Service]
+        
+        subgraph Concurrency Engine
+            TS --> RL[ReentrantLock Map]
+            TS --> TPE[ThreadPoolTaskExecutor]
+        end
+        
+        subgraph Persistence Layer
+            AS --> AR[Account Repository]
+            TS --> TR[Transaction Repository]
+            TS --> AR
+            AR --> JPA[Spring Data JPA / Hibernate]
+            TR --> JPA
+        end
+        
+        SJ[Scheduled Jobs] -->|Snapshots| AR
+    end
+    
+    JPA --> DB[(PostgreSQL / H2)]
+    
+    subgraph Data Integrity
+        RL --- |Mutual Exclusion| AS
+        JPA --- |Optimistic Locking| DB
+    end
+```
+
 ## Key Features
 
 - **Concurrent Transfer Engine**: Uses `ReentrantLock` with a consistent locking order to prevent race conditions and deadlocks during multi-account transfers.
