@@ -81,4 +81,11 @@ public class TransactionService {
             lock1.unlock();
         }
     }
+
+    @Transactional(readOnly = true)
+    public java.util.List<Transaction> getStatement(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        return transactionRepository.findBySourceAccountOrDestinationAccountOrderByTimestampDesc(account, account);
+    }
 }
